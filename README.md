@@ -6,6 +6,8 @@
 
 - FastAPI 后端：游戏状态、Agent 编排、SQLite 存档、回滚。
 - Streamlit 前端：开局、国势面板、派系面板、诏令输入、史册。
+- 地缘战略层：本国领土、邻国、威胁、情报、动员、战争疲劳和回合报告。
+- 战略动作：扩张、外交、动员、建设、进攻。
 - OpenAI 兼容 LLM 配置：支持 `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL`。
 - Mock 模式：没有 LangChain 或云端密钥时也能试玩完整循环。
 
@@ -60,6 +62,18 @@ ARS_USE_MOCK_LLM=false
 - `POST /api/games/{game_id}/turns`：提交玩家指令并结算回合。
 - `GET /api/games/{game_id}/turns`：读取回合历史。
 - `POST /api/games/{game_id}/rollback`：回滚到指定回合。
+
+## 战略玩法
+
+诏令可以继续使用自由文本，也可以包含更明确的战略动作：
+
+- `进攻北境汗国边境矿山`
+- `派使者改善与南洋商贸邦联关系`
+- `动员边境军镇`
+- `在铁矿区修筑要塞`
+- `开拓高地边疆`
+
+每回合会同时结算内廷派系反馈和外部世界压力。侧边栏会显示地缘政治看板，主区域会显示经济、边境、情报、派系和军事五类回合报告。
 
 ## 测试
 

@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .models import GameState, GameSummary, TurnRecord
+from .world import ensure_world_state
 
 
 class GameNotFoundError(Exception):
@@ -125,7 +126,7 @@ class GameStore:
             ).fetchone()
         if not row:
             raise TurnNotFoundError(f"{game_id}@{game['current_turn']}")
-        return GameState.model_validate_json(row["state_json"])
+        return ensure_world_state(GameState.model_validate_json(row["state_json"]))
 
     def save_turn(
         self,
@@ -226,4 +227,4 @@ class GameStore:
                 """,
                 (turn_number, now, game_id),
             )
-        return GameState.model_validate_json(row["state_json"])
+        return ensure_world_state(GameState.model_validate_json(row["state_json"]))

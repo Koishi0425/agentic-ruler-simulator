@@ -51,3 +51,25 @@ def test_clamp_keeps_values_in_bounds() -> None:
     assert clamp(120) == 100
     assert clamp(120, 0, 999) == 120
 
+
+def test_game_state_has_world_defaults_for_legacy_json() -> None:
+    state = GameState(
+        game_id="game",
+        turn_number=0,
+        world_metadata=WorldMetadata(
+            setting="架空中世纪",
+            era="测试时代",
+            key_resource="测试资源",
+        ),
+        global_stats=GlobalStats(
+            treasury=100,
+            stability=70,
+            prestige=50,
+            legitimacy=60,
+        ),
+        factions=[make_faction("fac_1"), make_faction("fac_2"), make_faction("fac_3")],
+    )
+
+    assert state.my_nation.army_power == 500
+    assert state.world_map == []
+    assert state.world_tension == 25

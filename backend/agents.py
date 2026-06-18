@@ -24,6 +24,13 @@ from .models import (
     clamp,
 )
 from .settings import Settings
+from .world import (
+    apply_world_changes,
+    ensure_world_state,
+    initialize_world,
+    parse_action_intents,
+    resolve_world_actions,
+)
 
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
@@ -81,12 +88,15 @@ class AgentOrchestrator:
     async def create_game(self, request: GameCreateRequest) -> tuple[GameState, str]:
         if self.llm.real_llm_available:
             try:
-                return await self._create_game_with_llm(request)
+                state, opening = await self._create_game_with_llm(request)
+                return ensure_world_state(state), opening
             except Exception:
                 return self._create_game_mock(request)
         return self._create_game_mock(request)
 
     async def resolve_turn(self, state: GameState, command: str) -> TurnResolution:
+        state = ensure_world_state(state)
+        action_intents = parse_action_intents(command, state)
         reactions = await asyncio.gather(
             *[self._react_as_faction(state, faction, command) for faction in state.factions]
         )
@@ -97,15 +107,21 @@ class AgentOrchestrator:
                 arbiter = self._resolve_mock(state, command, reactions)
         else:
             arbiter = self._resolve_mock(state, command, reactions)
+        self._merge_world_resolution(state, command, action_intents, arbiter)
         next_state = self._apply_resolution(state, command, arbiter)
         return TurnResolution(
             game_id=state.game_id,
             turn_number=next_state.turn_number,
             command=command,
+            action_intents=action_intents,
             reactions=reactions,
             narrative=arbiter.narrative,
             stat_changes=arbiter.stat_changes,
             faction_changes=arbiter.faction_changes,
+            nation_changes=arbiter.nation_changes,
+            rival_changes=arbiter.rival_changes,
+            external_events=arbiter.external_events,
+            end_turn_report=arbiter.end_turn_report,
             state=next_state,
         )
 
@@ -147,7 +163,7 @@ class AgentOrchestrator:
                 )
             ],
         )
-        return state, world.opening_narrative
+        return ensure_world_state(state), world.opening_narrative
 
     def _create_game_mock(self, request: GameCreateRequest) -> tuple[GameState, str]:
         scenario = self._scenario_text(request)
@@ -309,12 +325,18 @@ class AgentOrchestrator:
             f"国库尚可支撑数季，民心却还在观望。{metadata.key_resource}成为所有争论的核心，"
             "每个派系都愿意献上忠诚，也都在等待一个能证明王权方向的决定。"
         )
+        nation, rivals, tension, intel, report = initialize_world(metadata.setting)
         state = GameState(
             game_id=game_id,
             turn_number=0,
             world_metadata=metadata,
             global_stats=GlobalStats(treasury=100, stability=72, prestige=50, legitimacy=58),
             factions=factions,
+            my_nation=nation,
+            world_map=rivals,
+            world_tension=tension,
+            intel_reports=intel,
+            end_turn_report=report,
             current_crises=["继承合法性仍受质疑", "边境补给线紧张", "首都物价上涨"],
             history_log=[
                 HistoryEntry(
@@ -519,6 +541,35 @@ class AgentOrchestrator:
             history_summary=mood,
         )
 
+    def _merge_world_resolution(
+        self,
+        state: GameState,
+        command: str,
+        action_intents: list,
+        resolution: ArbiterResolution,
+    ) -> None:
+        (
+            world_stats,
+            nation_changes,
+            rival_changes,
+            external_events,
+            report,
+            tension_delta,
+            intel_updates,
+            narrative_suffix,
+        ) = resolve_world_actions(state, command, action_intents)
+        resolution.stat_changes.treasury += world_stats.treasury
+        resolution.stat_changes.stability += world_stats.stability
+        resolution.stat_changes.prestige += world_stats.prestige
+        resolution.stat_changes.legitimacy += world_stats.legitimacy
+        resolution.nation_changes.extend(nation_changes)
+        resolution.rival_changes.extend(rival_changes)
+        resolution.external_events.extend(external_events)
+        resolution.world_tension_delta += tension_delta
+        resolution.intel_updates.extend(intel_updates)
+        resolution.end_turn_report = report
+        resolution.narrative = f"{resolution.narrative}{narrative_suffix}"
+
     def _apply_resolution(
         self, state: GameState, command: str, resolution: ArbiterResolution
     ) -> GameState:
@@ -567,7 +618,7 @@ class AgentOrchestrator:
                 summary=resolution.history_summary,
             ),
         ]
-        return state.model_copy(
+        updated_state = state.model_copy(
             deep=True,
             update={
                 "turn_number": next_turn,
@@ -576,6 +627,14 @@ class AgentOrchestrator:
                 "current_crises": resolution.crisis_changes[:5],
                 "history_log": history,
             },
+        )
+        return apply_world_changes(
+            updated_state,
+            resolution.nation_changes,
+            resolution.rival_changes,
+            resolution.world_tension_delta,
+            resolution.intel_updates,
+            resolution.end_turn_report,
         )
 
     def _scenario_text(self, request: GameCreateRequest) -> str:

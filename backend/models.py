@@ -41,6 +41,86 @@ class GlobalStats(BaseModel):
     legitimacy: int = Field(ge=0, le=100)
 
 
+class Province(BaseModel):
+    id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    province_type: str = Field(min_length=1)
+    facilities: list[str] = Field(default_factory=list)
+    output: dict[str, int] = Field(default_factory=dict)
+    adjacent_targets: list[str] = Field(default_factory=list)
+
+
+class MyNation(BaseModel):
+    provinces: list[Province] = Field(default_factory=list)
+    army_power: int = Field(default=500, ge=0, le=5000)
+    tech_level: int = Field(default=2, ge=1, le=10)
+    mobilization: int = Field(default=0, ge=0, le=100)
+    war_exhaustion: int = Field(default=0, ge=0, le=100)
+
+
+class RivalNation(BaseModel):
+    nation_id: str = Field(min_length=1)
+    name: str = Field(min_length=1)
+    stance: Literal["Hostile", "Neutral", "Ally", "War"]
+    visible_power: int = Field(ge=0, le=5000)
+    true_power: int = Field(ge=0, le=5000)
+    threat: int = Field(ge=0, le=100)
+    relations: int = Field(ge=-100, le=100)
+    description: str = ""
+    war_status: Literal["peace", "border_conflict", "war"] = "peace"
+    claims: list[str] = Field(default_factory=list)
+    fog_of_war: int = Field(default=35, ge=0, le=100)
+
+
+class ActionIntent(BaseModel):
+    action_type: Literal[
+        "expand",
+        "diplomacy",
+        "mobilize",
+        "build",
+        "attack",
+        "domestic_policy",
+    ]
+    target: str = ""
+    details: str = ""
+
+
+class NationChange(BaseModel):
+    army_power_delta: int = 0
+    tech_level_delta: int = 0
+    mobilization_delta: int = 0
+    war_exhaustion_delta: int = 0
+    added_provinces: list[Province] = Field(default_factory=list)
+    province_updates: list[Province] = Field(default_factory=list)
+    reason: str = ""
+
+
+class RivalChange(BaseModel):
+    nation_id: str
+    visible_power_delta: int = 0
+    true_power_delta: int = 0
+    threat_delta: int = 0
+    relations_delta: int = 0
+    stance: Literal["Hostile", "Neutral", "Ally", "War"] | None = None
+    war_status: Literal["peace", "border_conflict", "war"] | None = None
+    reason: str = ""
+
+
+class ExternalEvent(BaseModel):
+    category: Literal["border", "diplomacy", "war", "trade", "intel", "opportunity"]
+    title: str
+    description: str
+    nation_id: str = ""
+
+
+class EndTurnReport(BaseModel):
+    economy: str = "财政维持惯性，尚无显著变化。"
+    border: str = "边境暂时平静。"
+    intel: str = "没有新的可靠情报。"
+    factions: str = "派系仍在观察王座的方向。"
+    military: str = "军队保持常备状态。"
+
+
 class HistoryEntry(BaseModel):
     turn_number: int = Field(ge=0)
     title: str
@@ -55,6 +135,11 @@ class GameState(BaseModel):
     world_metadata: WorldMetadata
     global_stats: GlobalStats
     factions: list[Faction] = Field(min_length=3, max_length=5)
+    my_nation: MyNation = Field(default_factory=MyNation)
+    world_map: list[RivalNation] = Field(default_factory=list)
+    world_tension: int = Field(default=25, ge=0, le=100)
+    intel_reports: list[str] = Field(default_factory=list)
+    end_turn_report: EndTurnReport = Field(default_factory=EndTurnReport)
     current_crises: list[str] = Field(default_factory=list, max_length=5)
     history_log: list[HistoryEntry] = Field(default_factory=list)
 
@@ -95,6 +180,12 @@ class ArbiterResolution(BaseModel):
     narrative: str
     stat_changes: StatDelta = Field(default_factory=StatDelta)
     faction_changes: list[FactionChange] = Field(default_factory=list)
+    nation_changes: list[NationChange] = Field(default_factory=list)
+    rival_changes: list[RivalChange] = Field(default_factory=list)
+    external_events: list[ExternalEvent] = Field(default_factory=list)
+    end_turn_report: EndTurnReport = Field(default_factory=EndTurnReport)
+    world_tension_delta: int = 0
+    intel_updates: list[str] = Field(default_factory=list)
     crisis_changes: list[str] = Field(default_factory=list, max_length=5)
     history_title: str = "未命名回合"
     history_summary: str
@@ -104,10 +195,15 @@ class TurnResolution(BaseModel):
     game_id: str
     turn_number: int
     command: str
+    action_intents: list[ActionIntent] = Field(default_factory=list)
     reactions: list[FactionReaction]
     narrative: str
     stat_changes: StatDelta
     faction_changes: list[FactionChange]
+    nation_changes: list[NationChange] = Field(default_factory=list)
+    rival_changes: list[RivalChange] = Field(default_factory=list)
+    external_events: list[ExternalEvent] = Field(default_factory=list)
+    end_turn_report: EndTurnReport = Field(default_factory=EndTurnReport)
     state: GameState
 
 

@@ -1,0 +1,228 @@
+{
+  "架空中世纪": {
+    "my_nation": {
+      "army_power": 520,
+      "tech_level": 2,
+      "mobilization": 0,
+      "war_exhaustion": 0,
+      "provinces": [
+        {
+          "id": "capital",
+          "name": "王冠城",
+          "province_type": "capital",
+          "facilities": ["王宫", "集市"],
+          "output": { "treasury": 10, "stability": 2 },
+          "adjacent_targets": ["rival_north", "wild_highland"]
+        },
+        {
+          "id": "iron_mine",
+          "name": "铁矿区",
+          "province_type": "resource",
+          "facilities": ["矿井"],
+          "output": { "treasury": 8, "army_power": 20 },
+          "adjacent_targets": ["rival_north"]
+        },
+        {
+          "id": "border_fort",
+          "name": "边境要塞",
+          "province_type": "fort",
+          "facilities": ["木墙"],
+          "output": { "stability": 1, "army_power": 25 },
+          "adjacent_targets": ["rival_east", "wild_highland"]
+        }
+      ]
+    },
+    "rivals": [
+      {
+        "nation_id": "rival_north",
+        "name": "北境汗国",
+        "stance": "Hostile",
+        "visible_power": 560,
+        "true_power": 620,
+        "threat": 68,
+        "relations": -55,
+        "description": "逐水草而居的掠夺者，窥视着你的边境矿山。",
+        "war_status": "peace",
+        "claims": ["铁矿区"],
+        "fog_of_war": 45
+      },
+      {
+        "nation_id": "rival_south",
+        "name": "南洋商贸邦联",
+        "stance": "Neutral",
+        "visible_power": 380,
+        "true_power": 420,
+        "threat": 34,
+        "relations": 5,
+        "description": "港口商人与雇佣舰队组成的富庶邦联，重视商路胜过王冠。",
+        "war_status": "peace",
+        "claims": [],
+        "fog_of_war": 30
+      },
+      {
+        "nation_id": "rival_east",
+        "name": "东境公国",
+        "stance": "Neutral",
+        "visible_power": 470,
+        "true_power": 500,
+        "threat": 44,
+        "relations": -10,
+        "description": "与你同源的边境贵族政权，既可能联姻，也可能争夺旧王朝法统。",
+        "war_status": "peace",
+        "claims": ["边境要塞"],
+        "fog_of_war": 35
+      }
+    ]
+  },
+  "古典帝国": {
+    "my_nation": {
+      "army_power": 570,
+      "tech_level": 2,
+      "mobilization": 0,
+      "war_exhaustion": 0,
+      "provinces": [
+        {
+          "id": "capital",
+          "name": "执政官城",
+          "province_type": "capital",
+          "facilities": ["元老院广场", "粮仓"],
+          "output": { "treasury": 9, "stability": 2 },
+          "adjacent_targets": ["rival_marches"]
+        },
+        {
+          "id": "grain_delta",
+          "name": "粮河三角洲",
+          "province_type": "farmland",
+          "facilities": ["灌渠"],
+          "output": { "treasury": 7, "stability": 3 },
+          "adjacent_targets": ["rival_league"]
+        },
+        {
+          "id": "frontier_camp",
+          "name": "北境军营",
+          "province_type": "military",
+          "facilities": ["军营"],
+          "output": { "army_power": 40 },
+          "adjacent_targets": ["rival_marches"]
+        }
+      ]
+    },
+    "rivals": [
+      {
+        "nation_id": "rival_marches",
+        "name": "北方边侯联盟",
+        "stance": "Hostile",
+        "visible_power": 620,
+        "true_power": 680,
+        "threat": 64,
+        "relations": -45,
+        "description": "边境骑兵贵族组成的军事同盟，常以旧盟约索要土地。",
+        "war_status": "peace",
+        "claims": ["北境军营"],
+        "fog_of_war": 40
+      },
+      {
+        "nation_id": "rival_league",
+        "name": "群岛贸易同盟",
+        "stance": "Neutral",
+        "visible_power": 430,
+        "true_power": 450,
+        "threat": 38,
+        "relations": 10,
+        "description": "以海运和债券控制内海粮价的城邦集团。",
+        "war_status": "peace",
+        "claims": [],
+        "fog_of_war": 25
+      },
+      {
+        "nation_id": "rival_desert",
+        "name": "赤沙王朝",
+        "stance": "Neutral",
+        "visible_power": 520,
+        "true_power": 560,
+        "threat": 48,
+        "relations": -15,
+        "description": "控制商路绿洲的古老王朝，善于让补给线变成陷阱。",
+        "war_status": "peace",
+        "claims": ["粮河三角洲"],
+        "fog_of_war": 38
+      }
+    ]
+  },
+  "黑暗奇幻": {
+    "my_nation": {
+      "army_power": 500,
+      "tech_level": 2,
+      "mobilization": 0,
+      "war_exhaustion": 5,
+      "provinces": [
+        {
+          "id": "capital",
+          "name": "灰烬王城",
+          "province_type": "capital",
+          "facilities": ["圣火祭坛"],
+          "output": { "legitimacy": 3, "stability": 1 },
+          "adjacent_targets": ["rival_cult"]
+        },
+        {
+          "id": "silver_wood",
+          "name": "银木林",
+          "province_type": "wild",
+          "facilities": ["哨塔"],
+          "output": { "treasury": 5, "intel": 1 },
+          "adjacent_targets": ["rival_fae", "wild_ruins"]
+        },
+        {
+          "id": "old_wall",
+          "name": "旧王长墙",
+          "province_type": "fort",
+          "facilities": ["残破城墙"],
+          "output": { "army_power": 35 },
+          "adjacent_targets": ["rival_cult"]
+        }
+      ]
+    },
+    "rivals": [
+      {
+        "nation_id": "rival_cult",
+        "name": "裂隙教国",
+        "stance": "Hostile",
+        "visible_power": 590,
+        "true_power": 710,
+        "threat": 72,
+        "relations": -70,
+        "description": "崇拜灾厄裂隙的神权军团，正在寻找王国衰弱的时刻。",
+        "war_status": "peace",
+        "claims": ["旧王长墙"],
+        "fog_of_war": 55
+      },
+      {
+        "nation_id": "rival_fae",
+        "name": "暮林妖廷",
+        "stance": "Neutral",
+        "visible_power": 420,
+        "true_power": 540,
+        "threat": 46,
+        "relations": -5,
+        "description": "不承认人类边界的古老宫廷，交易与诅咒往往只有一线之隔。",
+        "war_status": "peace",
+        "claims": ["银木林"],
+        "fog_of_war": 60
+      },
+      {
+        "nation_id": "rival_freeholds",
+        "name": "北岭自由领",
+        "stance": "Neutral",
+        "visible_power": 360,
+        "true_power": 390,
+        "threat": 30,
+        "relations": 15,
+        "description": "由流亡者、猎人和小领主组成的松散边境共同体。",
+        "war_status": "peace",
+        "claims": [],
+        "fog_of_war": 30
+      }
+    ]
+  }
+}
+

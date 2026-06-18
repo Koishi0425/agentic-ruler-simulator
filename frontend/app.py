@@ -23,6 +23,12 @@ STANCE_LABELS = {
     "bargain": "🤝 议价",
     "neutral": "⏳ 观望",
 }
+RIVAL_STANCE_LABELS = {
+    "Hostile": "敌对",
+    "Neutral": "中立",
+    "Ally": "盟友",
+    "War": "战争",
+}
 
 
 st.set_page_config(page_title="Agentic Ruler Simulator", page_icon="♟", layout="wide")
@@ -106,6 +112,28 @@ def render_faction(faction: dict[str, Any]) -> None:
     st.progress(faction["approval"] / 100, text=f"好感 {faction['approval']}")
 
 
+def render_geopolitics(state: dict[str, Any]) -> None:
+    nation = state.get("my_nation", {})
+    rivals = state.get("world_map", [])
+    st.divider()
+    st.subheader("地缘政治")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        render_stat("军力", nation.get("army_power", 0))
+        render_stat("动员", nation.get("mobilization", 0))
+    with col_b:
+        render_stat("科技", nation.get("tech_level", 0))
+        render_stat("厌战", nation.get("war_exhaustion", 0))
+    st.progress(state.get("world_tension", 0) / 100, text=f"世界紧张度 {state.get('world_tension', 0)}")
+    for rival in rivals:
+        stance = RIVAL_STANCE_LABELS.get(rival["stance"], rival["stance"])
+        st.markdown(f"**{rival['name']} · {stance}**")
+        st.caption(
+            f"威胁 {rival['threat']} · 关系 {rival['relations']} · "
+            f"可见战力 {rival['visible_power']} · {rival['war_status']}"
+        )
+
+
 def set_game(game_id: str, state: dict[str, Any] | None = None) -> None:
     st.session_state.game_id = game_id
     st.session_state.state = state if state else load_state(game_id)
@@ -160,6 +188,8 @@ def render_sidebar() -> None:
         for faction in state["factions"]:
             render_faction(faction)
             st.write("")
+
+        render_geopolitics(state)
 
         st.divider()
         st.subheader("回滚")
@@ -217,6 +247,9 @@ def render_new_game() -> None:
 
 
 def render_game(state: dict[str, Any]) -> None:
+    if st.session_state.pop("clear_decree_text", False):
+        st.session_state.decree_text = ""
+
     metadata = state["world_metadata"]
     st.title(metadata["setting"])
     st.caption(
@@ -227,6 +260,14 @@ def render_game(state: dict[str, Any]) -> None:
     crises = state.get("current_crises", [])
     if crises:
         st.warning("当前危机：" + " / ".join(crises))
+
+    with st.expander("文字地图", expanded=False):
+        nation = state.get("my_nation", {})
+        for province in nation.get("provinces", []):
+            facilities = "、".join(province.get("facilities", [])) or "无设施"
+            adjacent = "、".join(province.get("adjacent_targets", [])) or "无明确相邻目标"
+            st.markdown(f"**{province['name']}** · {province['province_type']}")
+            st.caption(f"设施：{facilities} · 相邻：{adjacent}")
 
     last_resolution = st.session_state.get("last_resolution")
     if last_resolution:
@@ -271,13 +312,36 @@ def render_game(state: dict[str, Any]) -> None:
                     f"影响力 {change['clout_delta']:+d}。{change.get('reason', '')}"
                 )
 
+        events = last_resolution.get("external_events", [])
+        report = last_resolution.get("end_turn_report", {})
+        if events or report:
+            st.markdown("### 回合报告")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.info(f"📈 经济损益：{report.get('economy', '暂无报告')}")
+                st.info(f"🕵️ 间谍情报：{report.get('intel', '暂无报告')}")
+            with col_b:
+                st.info(f"⚔️ 边境摩擦：{report.get('border', '暂无报告')}")
+                st.info(f"📜 派系动态：{report.get('factions', '暂无报告')}")
+            st.info(f"🛡️ 军事态势：{report.get('military', '暂无报告')}")
+            for event in events:
+                st.caption(f"{event['title']}：{event['description']}")
+
     st.markdown("### 诏令")
-    with st.form("turn_form", clear_on_submit=True):
+    with st.form("turn_form", clear_on_submit=False):
         command = st.text_area(
             "输入政策或命令",
-            height=120,
-            placeholder="例如：提高城市关税，用新增收入修复边境要塞，并要求教会公开支持王室。",
+            height=280,
+            placeholder=(
+                "可以写很短的战略命令，也可以写完整诏令。\n\n"
+                "例如：进攻北境汗国边境矿山。\n\n"
+                "也可以写：鉴于北境汗国屡次侵犯边境，命令王家军镇动员三成预备队，"
+                "以铁矿区为补给核心推进至争议山口；同时派使者安抚南洋商贸邦联，"
+                "承诺维持商路税率，以避免双线压力。"
+            ),
+            key="decree_text",
         )
+        st.caption(f"当前诏令约 {len(command.strip())} 字。提交失败时文本会保留，成功结算后清空。")
         submitted = st.form_submit_button("颁布", use_container_width=True)
     if submitted and command.strip():
         try:
@@ -289,6 +353,7 @@ def render_game(state: dict[str, Any]) -> None:
             st.session_state.state = result["state"]
             st.session_state.turns = load_turns(st.session_state.game_id)
             st.session_state.last_resolution = result
+            st.session_state.clear_decree_text = True
             st.rerun()
         except Exception as exc:
             st.error(f"回合结算失败：{exc}")
@@ -320,4 +385,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
